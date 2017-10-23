@@ -1,0 +1,24 @@
+#
+# this is an example runcard
+#
+
+# number of steps
+nsteps = 50000
+
+# info steps
+ninfo = 100
+
+# temperature
+T = 1e-4
+
+# number of particle types
+ntypes = 2
+
+# number of particles
+dens = [ 10, 10 ]
+
+# number of boxes
+nboxes = 50
+
+# interaction matrix
+M = [[ 0, -5e-5 ], [ -5e-5, 0 ]]
