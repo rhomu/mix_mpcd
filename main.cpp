@@ -12,9 +12,9 @@ namespace opt = boost::program_options;
 // parameters
 
 // time step
-double T = 1e-4;
+double tau = 2e-2;
 // number of boxes in each dimension
-int nboxes = 100;
+vector<int> L;
 // number of particles
 vector<int> dens = {10};
 // total number of particles
@@ -24,9 +24,9 @@ int ntypes = 1;
 // interaction matrix
 vector<vector<double>> M;
 // total number of time steps
-int nsteps = 10000;
+int nsteps = 100000;
 // number of steps between analyses
-int ninfo = 1000;
+int ninfo = 100;
 // verbosity level
 int verbose = 1;
 // width of the output
@@ -41,15 +41,6 @@ vec f({ 0, 0 });
 // =============================================================================
 // components
 
-// get box index from vector with positive coordinates
-int get_box(const vec& v, int n)
-{
-  int index = 0;
-  for(const auto& c : v)
-    index = n*index + int(c*n);
-  return index;
-}
-
 // single particle
 struct particle
 {
@@ -61,7 +52,8 @@ struct particle
   // one step forward
   void stream()
   {
-      x = collapse(x+v);
+    for(int i=0; i<dim; ++i)
+      x[i] = modu(x[i] + tau*v[i], L[i]);
   }
 };
 
@@ -104,7 +96,7 @@ struct box
       grad[p->t] += 30.*q*(8.*q*q + 6.*q.times(q) - 3.);
       tcm[p->t]  += p->v;
       vcm        += p->v;
-      p->v        = random_vec(normal_distribution<>(0., T));
+      p->v        = random_vec(normal_distribution<>(0., 1.));
       ncm[p->t]  += p->v;
     }
     vcm /= ntot;
@@ -145,6 +137,35 @@ struct box
   }
 };
 
+class grid
+{
+  // all boxes
+  vector<box> boxes;
+
+public:
+  grid()
+  {
+    for(int i=0; i<L[0]; ++i)
+      for(int j=0; j<L[1]; ++j)
+        boxes.push_back(vec {{i+.5, j+.5}});
+  }
+
+  void bucket(particle* p, const vec& shift)
+  {
+    // construct index from position
+    int index = 0;
+    for(int i=dim-1; i>=0; --i)
+      index = L[i]*index + int(p->x[i]+shift[i]);
+
+    // add to corresponding box
+    boxes[index].add(p);
+  }
+
+  vector<box>::iterator begin() { return boxes.begin(); }
+  vector<box>::iterator end() { return boxes.end(); }
+  vector<box>::const_iterator begin() const { return boxes.begin(); }
+  vector<box>::const_iterator end() const { return boxes.end(); }
+};
 
 // =============================================================================
 // input/output
@@ -153,7 +174,7 @@ struct box
 void parse_options(int ac, char **av)
 {
   // we use strings to retreive the arrays
-  string Mget, dget;
+  string Mget, dget, Lget;
 
   // options allowed only in the command line
   opt::options_description generic("Generic options");
@@ -166,12 +187,12 @@ void parse_options(int ac, char **av)
   // options allowed only in the config file
   opt::options_description config("Configuration options");
   config.add_options()
-    ("nboxes", opt::value<int>(&nboxes), "number of boxes (both x and y)")
+    ("L", opt::value<string>(&Lget), "number of boxes")
     ("dens", opt::value<string>(&dget), "density of particles")
     ("ntypes", opt::value<int>(&ntypes), "number of different types")
     ("nsteps", opt::value<int>(&nsteps), "total number of time steps")
     ("ninfo", opt::value<int>(&ninfo), "number of time steps between two analyses")
-    ("T", opt::value<double>(&T), "temperature")
+    ("tau", opt::value<double>(&tau), "time step")
     ("M", opt::value<string>(&Mget), "interaction matrix");
 
   // command line options
@@ -215,10 +236,15 @@ void parse_options(int ac, char **av)
   }
   else throw inline_str("please specify an input/output directory");
 
+  // get system size
+  L = get_ints_from_string(Lget);
+  if(L.size()!=dim) throw inline_str("wrong format for system size");
+
   // get number of particles array
   dens = get_ints_from_string(dget);
   if(dens.size()!=ntypes) throw inline_str("wrong number of densities");
-  ntot = pow(nboxes, dim)*accumulate(begin(dens), end(dens), 0.);
+  ntot = accumulate(begin(L), end(L), 1., std::multiplies<double>())*
+         accumulate(begin(dens), end(dens), 0.);
 
   // dirty conversion to interaction matrix...
   auto values = get_doubles_from_string(Mget);
@@ -242,7 +268,7 @@ void parse_options(int ac, char **av)
 
 // write the current state
 void write_frame(int t,
-                 const vector<box>& boxes,
+                 const grid& boxes,
                  const vector<particle>& particles)
 {
   // helper to construct file names
@@ -297,20 +323,17 @@ void simulate()
   vector<particle> particles;
   particles.reserve(ntot);
   for(int t=0; t<ntypes; ++t)
-    for(int i=0; i<nboxes; ++i)
-      for(int j=0; j<nboxes; ++j)
+    for(int i=0; i<L[0]; ++i)
+      for(int j=0; j<L[1]; ++j)
         for(int k=0; k<dens[t]; ++k)
           particles.push_back({
-            {{ random_real(double(i)/nboxes, double(i+1)/nboxes),
-               random_real(double(j)/nboxes, double(j+1)/nboxes) }},
+            {{ random_real(double(i), double(i+1)),
+               random_real(double(j), double(j+1)) }},
             {{0,0}},
             t});
 
-  // the boxes
-  vector<box> boxes;
-  for(int i=0; i<nboxes; ++i)
-    for(int j=0; j<nboxes; ++j)
-      boxes.push_back(vec {{(i+.5)/nboxes, (j+.5)/nboxes}});
+  // the grid
+  grid boxes;
 
   // ---------------------------------------------------------------------------
   // the algo
@@ -318,9 +341,9 @@ void simulate()
   for(int t=0; t<=nsteps; ++t)
   {
     // the random shift
-    vec a = random_vec(0, 1./nboxes);
+    vec shift = random_vec(0, 1.);
     // ok that is dirty...
-    /*if(t%ninfo == 0)*/ a = {{0,0}};
+    /*if(t%ninfo == 0)*/ shift = {{0,0}};
 
     // simulate particles
     //#pragma omp parallel for num_threads(nthreads) if(nthreads)
@@ -329,8 +352,7 @@ void simulate()
       // stream
       particles[i].stream();
       // bucket particles
-      const int index = get_box(collapse(particles[i].x+a), nboxes);
-      boxes[index].add(&particles[i]);
+      boxes.bucket(&particles[i], shift);
     }
 
     // store step

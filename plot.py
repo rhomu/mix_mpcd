@@ -24,9 +24,9 @@ def load(name, dat):
     m = re.search(r'\s+{}\s+=\s+(.*)'.format(name), dat)
     return m.group(1)
 
+L      = eval(load('L', dat))
 dens   = eval(load('dens', dat))
 ntypes = int(load('ntypes', dat))
-nboxes = int(load('nboxes', dat))
 nsteps = int(load('nsteps', dat))
 ninfo  = int(load('ninfo', dat))
 
@@ -38,16 +38,16 @@ def get_density(frame, t = -1):
     fn = '{0}/frame{1}.density{2}.dat'.format(outdir ,str(frame*ninfo), suffix)
     dat = open(fn, mode='rw').read()
     arr = np.array(struct.unpack('i'*(len(dat)//4), dat))
-    return arr.reshape((nboxes, nboxes))
+    return arr.reshape((L[0], L[1]))
 
 
 def plot_frame(frame):
     fig.clf()
     dens0 = get_density(frame, t=0)
-    dens1 = get_density(frame, t=1)
-    phi = (dens0 - dens1).astype(float)/(dens0 + dens1)
-    cax = plt.imshow(phi, origin='lower', vmin=-1, vmax=1)
-    #cax = plt.imshow(dens1, origin='lower')
+    #dens1 = get_density(frame, t=1)
+    #phi = (dens0 - dens1).astype(float)/(dens0 + dens1)
+    #cax = plt.imshow(phi, origin='lower', vmin=-1, vmax=1)
+    cax = plt.imshow(dens0, origin='lower')
     cbar = fig.colorbar(cax)
 
 fig = plt.figure()

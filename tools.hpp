@@ -92,12 +92,4 @@ inline double modu(double num, double div)
   return div*signbit(num) + std::fmod(num, div);
 }
 
-// puts vector back on [0,1]^dim
-template<class T, int D>
-inline vect<T, D> collapse(vect<T, D> v)
-{
-  for(auto& c : v) c = modu(c, 1.);
-  return v;
-}
-
 #endif//TOOLS_HPP_

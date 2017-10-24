@@ -1,7 +1,7 @@
 
 INCS	=
 
-DEFS  = -std=c++11 -O3 -lboost_program_options #-g
+DEFS  = -std=c++11 -O3 -lboost_program_options -g
 
 LIBS	=
 

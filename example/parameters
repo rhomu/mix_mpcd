@@ -2,23 +2,26 @@
 # this is an example runcard
 #
 
+# system size
+L = [50, 50]
+
 # number of steps
 nsteps = 50000
 
 # info steps
 ninfo = 100
 
-# temperature
-T = 1e-4
+# time step
+tau = 2e-2
 
 # number of particle types
-ntypes = 2
+#ntypes = 2
+ntypes = 1
 
 # number of particles
-dens = [ 10, 10 ]
-
-# number of boxes
-nboxes = 50
+#dens = [ 10, 10 ]
+dens = 10
 
 # interaction matrix
-M = [[ 0, -5e-5 ], [ -5e-5, 0 ]]
+#M = [[ 0, -5e-5 ], [ -5e-5, 0 ]]
+M = [[ 0 ]]

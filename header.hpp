@@ -7,6 +7,7 @@
 #include <array>
 #include <cmath>
 #include <algorithm>
+#include <functional>
 #include <boost/program_options.hpp>
 
 #include "vector.hpp"
