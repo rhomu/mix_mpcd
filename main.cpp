@@ -57,9 +57,10 @@ struct particle
   }
 };
 
+// box used for collision operation
 struct box
 {
-  // location of the center of the box and size
+  // location of the center of the box
   const vec x;
   // number of particles of each type
   vector<int> n;
@@ -112,14 +113,6 @@ struct box
     }
   }
 
-  // analysis function
-  void analyse()
-  {
-    //ekin = 0;
-    //for(auto p : particles)
-    //  ekin += p->v.sq();
-  }
-
   // add particles
   void add(particle* p)
   {
@@ -137,6 +130,7 @@ struct box
   }
 };
 
+// set of boxes
 class grid
 {
   // all boxes
@@ -154,13 +148,14 @@ public:
   {
     // construct index from position
     int index = 0;
-    for(int i=dim-1; i>=0; --i)
+    for(int i=0; i<dim; ++i)
       index = L[i]*index + int(p->x[i]+shift[i]);
 
     // add to corresponding box
     boxes[index].add(p);
   }
 
+  // iterators over the boxes
   vector<box>::iterator begin() { return boxes.begin(); }
   vector<box>::iterator end() { return boxes.end(); }
   vector<box>::const_iterator begin() const { return boxes.begin(); }
@@ -364,10 +359,7 @@ void simulate()
       // collision and store
       //#pragma omp parallel for num_threads(nthreads) if(nthreads)
       for(auto b=boxes.begin(); b<boxes.end(); ++b)
-      {
         b->collision();
-        //b->analyse();
-      }
 
       // serialize
       write_frame(t, boxes, particles);

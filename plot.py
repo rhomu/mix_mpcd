@@ -44,10 +44,10 @@ def get_density(frame, t = -1):
 def plot_frame(frame):
     fig.clf()
     dens0 = get_density(frame, t=0)
-    #dens1 = get_density(frame, t=1)
-    #phi = (dens0 - dens1).astype(float)/(dens0 + dens1)
-    #cax = plt.imshow(phi, origin='lower', vmin=-1, vmax=1)
-    cax = plt.imshow(dens0, origin='lower')
+    dens1 = get_density(frame, t=1)
+    phi = (dens0 - dens1).astype(float)/(dens0 + dens1)
+    cax = plt.imshow(phi, origin='lower', vmin=-1, vmax=1)
+    #cax = plt.imshow(dens0, origin='lower')
     cbar = fig.colorbar(cax)
 
 fig = plt.figure()
