@@ -93,8 +93,7 @@ struct box
     for(auto p : particles)
     {
       // gradient
-      const vec q = p->x - x;
-      grad[p->t] += 30.*q*(8.*q*q + 6.*q.times(q) - 3.);
+      grad[p->t] += 12.*(p->x - x);
       tcm[p->t]  += p->v;
       vcm        += p->v;
       p->v        = random_vec(normal_distribution<>(0., 1.));
@@ -104,12 +103,19 @@ struct box
 
     // perform collision
     ekin = 0;
+    vcm = {{ 0, 0 }};
     for(auto& p : particles)
     {
-      p->v += vcm - ncm[p->t]/n[p->t];
+      p->v += (tcm[p->t] - ncm[p->t])/ntot;
       for(int t=0; t<ntypes; ++t)
-        if(n[t]>0) p->v += M[p->t][t]*grad[t]/n[t]/n[p->t];
+        if(n[t]>0) p->v += M[p->t][t]*grad[t]/n[t];
       ekin += p->v.sq()/2.;
+      vcm  += p->v;
+    }
+
+    for(auto& p : particles)
+    {
+      p->v -= vcm/ntot;
     }
   }
 

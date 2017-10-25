@@ -6,13 +6,13 @@
 L = [50, 50]
 
 # number of steps
-nsteps = 50000
+nsteps = 200000
 
 # info steps
 ninfo = 100
 
 # time step
-tau = 2e-2
+tau = 1e-2
 
 # number of particle types
 ntypes = 2
@@ -21,4 +21,4 @@ ntypes = 2
 dens = [ 10, 10 ]
 
 # interaction matrix
-M = [[ 0, -.3 ], [ -.3, 0 ]]
+M = [[ .2, -.2 ], [ -.2, .2 ]]
