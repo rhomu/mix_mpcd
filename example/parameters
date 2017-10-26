@@ -6,7 +6,7 @@
 L = [50, 50]
 
 # number of steps
-nsteps = 200000
+nsteps = 50000
 
 # info steps
 ninfo = 100
@@ -21,4 +21,4 @@ ntypes = 2
 dens = [10, 10]
 
 # interaction matrix
-M = [[ .05, -.05 ], [ -.05, .05 ]]
+M = [[ .04, -.04 ], [ -.06, .06 ]]

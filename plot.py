@@ -43,15 +43,21 @@ def get_density(frame, t = -1):
 
 def plot_frame(frame):
     fig.clf()
+    plt.subplots_adjust(wspace=.5)
     dens0 = get_density(frame, t=0)
     dens1 = get_density(frame, t=1)
     phi = (dens0 - dens1).astype(float)/(dens0 + dens1)
+    plt.subplot(1, 2, 1)
     cax = plt.imshow(phi, origin='lower', vmin=-1, vmax=1)
-    #cax = plt.imshow(dens0, origin='lower')
-    cbar = fig.colorbar(cax)
+    cbar = fig.colorbar(cax, fraction=0.046, pad=0.04)
+    plt.subplot(1, 2, 2)
+    cax = plt.imshow(dens0+dens1, origin='lower')
+    cbar = fig.colorbar(cax, fraction=0.046, pad=0.04)
 
 fig = plt.figure()
 an = ani.FuncAnimation(fig, plot_frame,
                        frames = np.arange(0, nsteps//ninfo),
-                       interval = 200, blit = False)
-plt.show()
+                       interval = 100, blit = False)
+#plt.show(); exit(0)
+writer = ani.writers['ffmpeg'](fps=10, bitrate=1800)
+an.save('movie.mp4', writer=writer)

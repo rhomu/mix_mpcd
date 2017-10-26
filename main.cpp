@@ -103,20 +103,13 @@ struct box
 
     // perform collision
     ekin = 0;
-    vcm = {{ 0, 0 }};
     for(auto& p : particles)
     {
       p->v += (tcm[p->t] - ncm[p->t])/ntot;
       for(int t=0; t<ntypes; ++t)
         if(n[t]>0) p->v += M[p->t][t]*grad[t]/n[t];
       ekin += p->v.sq()/2.;
-      //vcm  += p->v;
     }
-
-    //for(auto& p : particles)
-    //{
-    //  p->v -= vcm/ntot;
-    //}
   }
 
   // add particles
