@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include "header.hpp"
 #include "tools.hpp"
 
 // shortcut to boost program_options

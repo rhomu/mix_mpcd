@@ -80,7 +80,7 @@ struct box
   }
 
   // the collision operator
-  void collision()
+  void collision(const vec& shift)
   {
     // total number of particles
     if(ntot==0) return;
@@ -93,7 +93,7 @@ struct box
     for(auto p : particles)
     {
       // gradient
-      grad[p->t] += 12.*(p->x - x);
+      grad[p->t] += 12.*(modu(p->x + shift, L) - x);
       tcm[p->t]  += p->v;
       vcm        += p->v;
       p->v        = random_vec(normal_distribution<>(0., 1.));
@@ -110,13 +110,13 @@ struct box
       for(int t=0; t<ntypes; ++t)
         if(n[t]>0) p->v += M[p->t][t]*grad[t]/n[t];
       ekin += p->v.sq()/2.;
-      vcm  += p->v;
+      //vcm  += p->v;
     }
 
-    for(auto& p : particles)
-    {
-      p->v -= vcm/ntot;
-    }
+    //for(auto& p : particles)
+    //{
+    //  p->v -= vcm/ntot;
+    //}
   }
 
   // add particles
@@ -141,6 +141,8 @@ class grid
 {
   // all boxes
   vector<box> boxes;
+  // the current grid shift
+  vec shift;
 
 public:
   grid()
@@ -150,16 +152,24 @@ public:
         boxes.push_back(vec {{i+.5, j+.5}});
   }
 
-  void bucket(particle* p, const vec& shift)
+  void set_shift(const vec& s)
+  {
+    shift = s;
+  }
+
+  void bucket(particle* p)
   {
     // construct index from position
     int index = 0;
     for(int i=0; i<dim; ++i)
-      index = L[i]*index + int(p->x[i]+shift[i]);
+      index = L[i]*index + int(modu(p->x[i]+shift[i], L[i]));
 
     // add to corresponding box
     boxes[index].add(p);
   }
+
+  void clear() { for(auto& b : boxes) b.clear(); }
+  void collision() { for(auto& b : boxes) b.collision(shift); }
 
   // iterators over the boxes
   vector<box>::iterator begin() { return boxes.begin(); }
@@ -342,9 +352,7 @@ void simulate()
   for(int t=0; t<=nsteps; ++t)
   {
     // the random shift
-    vec shift = random_vec(0, 1.);
-    // ok that is dirty...
-    /*if(t%ninfo == 0)*/ shift = {{0,0}};
+    boxes.set_shift(random_vec(0, 1));
 
     // simulate particles
     //#pragma omp parallel for num_threads(nthreads) if(nthreads)
@@ -353,7 +361,7 @@ void simulate()
       // stream
       particles[i].stream();
       // bucket particles
-      boxes.bucket(&particles[i], shift);
+      boxes.bucket(&particles[i]);
     }
 
     // store step
@@ -363,26 +371,15 @@ void simulate()
       cout << "t = " << t <<  " / " << nsteps << endl;
 
       // collision and store
-      //#pragma omp parallel for num_threads(nthreads) if(nthreads)
-      for(auto b=boxes.begin(); b<boxes.end(); ++b)
-        b->collision();
-
-      // serialize
+      boxes.collision();
       write_frame(t, boxes, particles);
-
-      //#pragma omp parallel for num_threads(nthreads) if(nthreads)
-      for(auto b=boxes.begin(); b<boxes.end(); ++b)
-        b->clear();
+      boxes.clear();
     }
     // normal step
     else
     {
-      //#pragma omp parallel for num_threads(nthreads) if(nthreads)
-      for(auto b=boxes.begin(); b<boxes.end(); ++b)
-      {
-        b->collision();
-        b->clear();
-      }
+      boxes.collision();
+      boxes.clear();
     }
   }
 }

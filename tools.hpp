@@ -5,11 +5,9 @@
 #define TOOLS_HPP_
 
 #include <iostream>
+#include <cmath>
 #include <boost/program_options.hpp>
 #include "vector.hpp"
-
-/** Modulo function that works correctly with negative values */
-double modu(double num, double div);
 
 /** Print variables from variables_map
   *
@@ -89,7 +87,16 @@ inline std::ostream& write_binary(std::ostream& stream, T* value)
 // modulo with correct handling of negative values
 inline double modu(double num, double div)
 {
-  return div*signbit(num) + std::fmod(num, div);
+  return div*std::signbit(num) + std::fmod(num, div);
+}
+
+// component-wise modu
+template<int D, typename U>
+inline vect<double, D> modu(const vect<double, D>& num, const U& div)
+{
+  vect<double, D> ret;
+  for(int i; i<D; ++i) ret[i] = modu(num[i], div[i]);
+  return ret;
 }
 
 #endif//TOOLS_HPP_
