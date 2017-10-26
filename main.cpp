@@ -370,8 +370,14 @@ void simulate()
       // print status
       cout << "t = " << t <<  " / " << nsteps << endl;
 
-      // collision and store
+      // collision
       boxes.collision();
+      // we need to rebucket with zero shift before storing
+      boxes.clear();
+      boxes.set_shift({{0,0}});
+      for(int i=0; i<particles.size(); ++i)
+        boxes.bucket(&particles[i]);
+      // store and clear
       write_frame(t, boxes, particles);
       boxes.clear();
     }
