@@ -12,13 +12,13 @@ nsteps = 200000
 ninfo = 100
 
 # time step
-tau = 1e-2
+tau = 1e-1
 
 # number of particle types
 ntypes = 2
 
 # number of particles
-dens = [ 10, 10 ]
+dens = [10, 10]
 
 # interaction matrix
-M = [[ .2, -.2 ], [ -.2, .2 ]]
+M = [[ .05, -.05 ], [ -.05, .05 ]]
