@@ -56,8 +56,8 @@ def plot_frame(frame):
 
 fig = plt.figure()
 an = ani.FuncAnimation(fig, plot_frame,
-                       frames = np.arange(0, nsteps//ninfo),
+                       frames = np.arange(0, 25000//ninfo),
                        interval = 100, blit = False)
 plt.show(); exit(0)
-#writer = ani.writers['ffmpeg'](fps=10, bitrate=1800)
-#an.save('movie.mp4', writer=writer)
+writer = ani.writers['ffmpeg'](fps=10, bitrate=1800)
+an.save('movie.mp4', writer=writer)

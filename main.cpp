@@ -65,18 +65,18 @@ struct box
   // number of particles of each type
   vector<int> n;
   // total number of particles
-  int ntot;
+  int ntot = 0;
   // ptrs to particles
   vector<particle*> particles;
   // mean velocity and noise
-  vec vcm;
+  vec vcm, mcm;
   // total ekin
   double ekin;
 
   box(const vec& x)
     : x(x)
   {
-    n.resize(ntypes);
+    n.resize(ntypes, 0);
   }
 
   // the collision operator
@@ -86,29 +86,47 @@ struct box
     if(ntot==0) return;
 
     // compute box properties
-    vector<vec> grad(ntypes, {{0,0}}),
-                ncm(ntypes, {{0,0}}),
+    vector<vec> ncm(ntypes, {{0,0}}),
                 tcm(ntypes, {{0,0}});
+    vec grad {{0,0}};
     vcm = {{ 0, 0 }};
-    for(auto p : particles)
+    mcm = {{ 0, 0 }};
+    for(auto& p : particles)
     {
       // gradient
-      grad[p->t] += 12.*(modu(p->x + shift, L) - x);
+      grad       += (1-2*p->t)*12.*(modu(p->x + shift, L) - x);
       tcm[p->t]  += p->v;
       vcm        += p->v;
       p->v        = random_vec(normal_distribution<>(0., 1.));
       ncm[p->t]  += p->v;
+      mcm        += p->v;
     }
+
+    grad /= ntot;
     vcm /= ntot;
+    mcm /= ntot;
 
     // perform collision
+    const double l1 = 0.1;
+    const double l2 = 0.2;
     ekin = 0;
+    vec caca = {{0,0}};
     for(auto& p : particles)
     {
-      p->v += (tcm[p->t] - ncm[p->t])/ntot;
+      p->v += (tcm[p->t] - ncm[p->t])/n[p->t];
+      //p->v += vcm - ncm[p->t]/n[p->t];
+      //p->v += vcm - mcm;
       for(int t=0; t<ntypes; ++t)
-        if(n[t]>0) p->v += M[p->t][t]*grad[t]/n[t];
+        if(p->t==0) p->v +=  l1*2*n[1]/ntot*grad;
+        else        p->v += -l2*2*n[0]/ntot*grad;
+      caca  += p->v;
       ekin += p->v.sq()/2.;
+    }
+    caca /= ntot;
+
+    if((caca - vcm)[0] > 1e-6)
+    {
+      //cout << vcm << ' ' << caca << ' ' << ntot << ' ' << n[0] << ' '<< n[1] << '\n';
     }
   }
 

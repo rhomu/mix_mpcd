@@ -39,7 +39,7 @@ public:
   // addition
   vect& operator+=(const vect& p)
   {
-    for(size_t i=0; i<D; ++i)
+    for(int i=0; i<D; ++i)
       components[i] += p.components[i];
     return *this;
   }
@@ -56,7 +56,7 @@ public:
   // subtraction
   vect operator-=(const vect& p)
   {
-    for(size_t i=0; i<D; ++i)
+    for(int i=0; i<D; ++i)
       components[i] -= p.components[i];
     return *this;
   }
@@ -68,7 +68,7 @@ public:
   vect operator-() const
   {
     vect r;
-    for(size_t i=0; i<D; ++i)
+    for(int i=0; i<D; ++i)
       r.components[i] = -components[i];
     return r;
   }
@@ -76,7 +76,7 @@ public:
   vect operator*(const vect& p) const
   {
     vect c;
-    for(size_t i=0; i<D; ++i)
+    for(int i=0; i<D; ++i)
       c[i] = components[i]*p.components[i];
     return c;
   }
@@ -84,7 +84,7 @@ public:
   T times(const vect& p) const
   {
     T c;
-    for(size_t i=0; i<D; ++i)
+    for(int i=0; i<D; ++i)
       c += components[i]*p.components[i];
     return c;
   }
@@ -103,9 +103,9 @@ public:
     return (r /= s);
   }
 
-  T& operator[](size_t i)
+  T& operator[](int i)
   { return components[i]; }
-  T operator[](size_t i) const
+  T operator[](int i) const
   { return components[i]; }
 
   // norm squared
@@ -118,6 +118,18 @@ public:
   vect& normalize()
   {
     return *this/=norm();
+  }
+
+  bool operator==(const vect& p)
+  {
+    for(size_t i=0; i<D; ++i)
+      if(components[i]!=p.components[i])
+        return false;
+    return true;
+  }
+  bool operator!=(const vect& p)
+  {
+    return !(*this==p);
   }
 
   template<class TT, int DD>
@@ -138,7 +150,7 @@ template<class T, int D>
 vect<T, D> operator*(const vect<T, D>& p, const T& s)
 {
   auto r = p;
-  for(size_t i=0; i<D; ++i)
+  for(int i=0; i<D; ++i)
     r.components[i] *= s;
   return r;
 }
@@ -147,7 +159,7 @@ template<class T, int D>
 vect<T, D> operator*(const T& s, const vect<T, D>& p)
 {
   auto r = p;
-  for(size_t i=0; i<D; ++i)
+  for(int i=0; i<D; ++i)
     r.components[i] *= s;
   return r;
 }
@@ -156,7 +168,7 @@ template<class T, int D>
 std::ostream& operator<<(std::ostream& str, const vect<T, D>& p)
 {
   str << "(" << p.components[0];
-  for(size_t i=1; i<D; ++i)
+  for(int i=1; i<D; ++i)
     str << "," << p.components[i];
   str << ")";
   return str;
