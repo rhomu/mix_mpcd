@@ -33,8 +33,6 @@ int verbose = 1;
 int width = 50;
 // intput/output directory
 string directory;
-// number of threads
-int nthreads = 0;
 // external force
 vec f({ 0, 0 });
 
@@ -108,7 +106,7 @@ struct box
 
     // perform collision
     const double l1 = 0.1;
-    const double l2 = 0.2;
+    const double l2 = 0.13;
     ekin = 0;
     vec caca = {{0,0}};
     for(auto& p : particles)
@@ -203,8 +201,7 @@ void parse_options(int ac, char **av)
   generic.add_options()
     ("help,h", "produce help message")
     ("directory", opt::value<string>(&directory), "input/output directory")
-    ("verbose", opt::value<int>(&verbose)->implicit_value(2), "verbosity level (0, 1, 2, default=1)")
-    ("thread,t", opt::value<int>(&nthreads)->implicit_value(1), "number of threads (0=no multithreading, 1=OpenMP default, >1=your favorite number)");
+    ("verbose", opt::value<int>(&verbose)->implicit_value(2), "verbosity level (0, 1, 2, default=1)");
 
   // options allowed only in the config file
   opt::options_description config("Configuration options");
@@ -366,13 +363,12 @@ void simulate()
     boxes.set_shift(random_vec(0, 1));
 
     // simulate particles
-    //#pragma omp parallel for num_threads(nthreads) if(nthreads)
-    for(int i=0; i<particles.size(); ++i)
+    for(auto& p : particles)
     {
       // stream
-      particles[i].stream();
+      p.stream();
       // bucket particles
-      boxes.bucket(&particles[i]);
+      boxes.bucket(&p);
     }
 
     // store step
@@ -383,11 +379,11 @@ void simulate()
 
       // collision
       boxes.collision();
-      // we need to rebucket with zero shift before storing
+      // rebucket with zero shift before storing
       boxes.clear();
       boxes.set_shift({{0,0}});
-      for(int i=0; i<particles.size(); ++i)
-        boxes.bucket(&particles[i]);
+      for(auto& p : particles)
+        boxes.bucket(&p);
       // store and clear
       write_frame(t, boxes, particles);
       boxes.clear();
@@ -402,29 +398,6 @@ void simulate()
 }
 
 // =============================================================================
-// system
-
-// Somewhow omp_get_num_threads() is not working properly with gcc...
-void set_nthreads()
-{
-  // if nthreads is 1 we use the default number of threads from OpenMP
-  if(nthreads == 1)
-  {
-    // count the number of OpenMP threads
-    int count = 0;
-    //#pragma omp parallel
-    {
-      //#pragma omp atomic
-      ++count;
-    }
-    nthreads = count;
-  }
-}
-
-// compute derived parameters etc
-void initialize()
-{
-}
 
 int main(int argc, char *argv[])
 {
@@ -443,20 +416,6 @@ int main(int argc, char *argv[])
     if(verbose) cout << endl << "Initialization"
                      << endl << string(width, '=')
                      << endl;
-
-    // parameters init
-    if(verbose) cout << "system initialisation ...";
-    initialize();
-    if(verbose) cout << " done" << endl;
-
-    // multi-threading
-    if(nthreads)
-    {
-      // print some friendly message
-      if(verbose) cout << "multi-threading ... ";
-      set_nthreads();
-      if(verbose) cout << nthreads << " active threads" << endl;
-    }
 
     // ========================================
     // Running
