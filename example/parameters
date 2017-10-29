@@ -3,7 +3,7 @@
 #
 
 # system size
-L = [50, 50]
+L = [100, 100]
 
 # number of steps
 nsteps = 50000
@@ -21,4 +21,4 @@ ntypes = 2
 dens = [10, 10]
 
 # interaction matrix
-M = [[ .0, -.04 ], [ -.06, .0 ]]
+M = [[ .0, .1 ], [ .15, .0 ]]

@@ -54,9 +54,9 @@ def plot_frame(frame):
     cax = plt.imshow(dens0+dens1, origin='lower')
     cbar = fig.colorbar(cax, fraction=0.046, pad=0.04)
 
-fig = plt.figure()
+fig = plt.figure(figsize=(12,6))
 an = ani.FuncAnimation(fig, plot_frame,
-                       frames = np.arange(0, 25000//ninfo),
+                       frames = np.arange(0, nsteps//ninfo),
                        interval = 100, blit = False)
 plt.show(); exit(0)
 writer = ani.writers['ffmpeg'](fps=10, bitrate=1800)
