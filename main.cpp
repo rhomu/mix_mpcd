@@ -91,7 +91,8 @@ struct box
     for(auto& p : particles)
     {
       // gradient
-      grad[p->t] += 12.*(modu(p->x + shift, L) - x);
+      const vec d = modu(p->x + shift, L) - x;
+      if(d.sq()<1.) grad[p->t] += 12.*d;
       tcm[p->t]  += p->v;
       vcm        += p->v;
       p->v        = random_vec(normal_distribution<>(0., 1.));
