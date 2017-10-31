@@ -44,14 +44,20 @@ def get_density(frame, t = -1):
 def plot_frame(frame):
     fig.clf()
     plt.subplots_adjust(wspace=.5)
-    dens0 = get_density(frame, t=0)
-    dens1 = get_density(frame, t=1)
-    phi = (dens0 - dens1).astype(float)/(dens0 + dens1)
+
+    d = np.zeros(L)
+    h = np.zeros(L)
+    for i in range(ntypes):
+        dens = get_density(frame, t=i)
+        d += dens
+        h += dens.astype(float)*(i+.5)/ntypes
+
     plt.subplot(1, 2, 1)
-    cax = plt.imshow(phi, origin='lower', vmin=-1, vmax=1)
+    cax = plt.imshow(h/d, origin='lower')
     cbar = fig.colorbar(cax, fraction=0.046, pad=0.04)
+
     plt.subplot(1, 2, 2)
-    cax = plt.imshow(dens0+dens1, origin='lower')
+    cax = plt.imshow(d, origin='lower')
     cbar = fig.colorbar(cax, fraction=0.046, pad=0.04)
 
 fig = plt.figure(figsize=(12,6))

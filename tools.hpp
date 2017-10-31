@@ -45,9 +45,9 @@ std::string inline_str(Args&&... args)
   return s.str();
 }
 
-inline std::vector<double> get_doubles_from_string(std::string s)
+inline std::vector<float> get_floats_from_string(std::string s)
 {
-  std::vector<double> values;
+  std::vector<float> values;
 
   std::replace(begin(s), end(s), ']', ',');
   std::replace(begin(s), end(s), '[', ' ');
@@ -85,16 +85,16 @@ inline std::ostream& write_binary(std::ostream& stream, T* value)
 }
 
 // modulo with correct handling of negative values
-inline double modu(double num, double div)
+inline float modu(float num, float div)
 {
   return div*std::signbit(num) + std::fmod(num, div);
 }
 
 // component-wise modu
 template<int D, typename U>
-inline vect<double, D> modu(const vect<double, D>& num, const U& div)
+inline vect<float, D> modu(const vect<float, D>& num, const U& div)
 {
-  vect<double, D> ret;
+  vect<float, D> ret;
   for(int i; i<D; ++i) ret[i] = modu(num[i], div[i]);
   return ret;
 }

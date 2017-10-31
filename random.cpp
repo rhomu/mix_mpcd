@@ -1,40 +1,25 @@
 // random numbers
 
+#include <random>
 #include "random.hpp"
+#include "ziggurat_inline.hpp"
 
 using namespace std;
 
-// truly random device to generate seed
-random_device rd;
-// pseudo random generator
-generator_t gen(rd());
-// uniform distribution on (0, 1)
-uniform_real_distribution<> dist01(0, 1);
-// uniform distribution on (0, 1)
-uniform_real_distribution<> dist11(-1, 1);
-
 // return random real, uniform distribution
-double random_real(double min, double max)
+float random_real()
 {
-  return uniform_real_distribution<>(min, max)(gen);
+  return r4_uni_value();
 }
 
-// return random real, gaussian distributed
-double random_normal(double sigma)
+// return random real, normally distributed
+float random_normal()
 {
-  return normal_distribution<>(0., sigma)(gen);
+  return r4_nor_value();
 }
 
-// return random vector, with uniform distribution
-vec random_vec(double min, double max)
+void init_random()
 {
-  vec v;
-  auto dist = uniform_real_distribution<>(min, max);
-  generate(begin(v), end(v), [&](){ return dist(gen); } );
-  return v;
-}
-
-generator_t& get_gen()
-{
-  return gen;
+  random_device rd;
+  zigset(rd(), rd(), rd(), rd());
 }

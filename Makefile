@@ -15,7 +15,7 @@ all: mpcd
 	$(COMP) -c $< -o $@ $(INCS) $(DEFS) $(LIBPATH) $(LIBS)
 
 
-mpcd: main.cpp random.o tools.o
+mpcd: main.cpp random.o tools.o ziggurat_inline.o
 	$(COMP) $^ -o $@ $(INCS) $(DEFS) $(LIBPATH) $(LIBS)
 
 clean:

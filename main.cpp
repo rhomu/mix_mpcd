@@ -12,7 +12,7 @@ namespace opt = boost::program_options;
 // parameters
 
 // time step
-double tau = 2e-2;
+float tau = 2e-2;
 // number of boxes in each dimension
 vector<int> L;
 // number of particles
@@ -22,7 +22,7 @@ int ntot;
 // number of types
 int ntypes = 1;
 // interaction matrix
-vector<vector<double>> M;
+vector<vector<float>> M;
 // total number of time steps
 int nsteps = 100000;
 // number of steps between analyses
@@ -69,7 +69,7 @@ struct box
   // mean velocity
   vec vcm;
   // total ekin
-  double ekin;
+  float ekin;
 
   box(const vec& x)
     : x(x)
@@ -87,15 +87,22 @@ struct box
     vector<vec> ncm(ntypes, {{0,0}}),
                 tcm(ntypes, {{0,0}}),
                 grad {{0,0}};
+    vector<int> ngrad(ntypes, 0);
     vcm = {{ 0, 0 }};
     for(auto& p : particles)
     {
       // gradient
       const vec d = modu(p->x + shift, L) - x;
-      if(d.sq()<1.) grad[p->t] += 12.*d;
+      if(d.sq()<1)
+      {
+        grad[p->t] += 12.f*d;
+        ++ngrad[p->t];
+      }
+
+      // noise
       tcm[p->t]  += p->v;
       vcm        += p->v;
-      p->v        = random_vec(normal_distribution<>(0., 1.));
+      p->v        = {{ random_normal(), random_normal() }};
       ncm[p->t]  += p->v;
     }
 
@@ -107,8 +114,10 @@ struct box
     {
       p->v += (tcm[p->t] - ncm[p->t])/n[p->t];
       for(int t=0; t<ntypes; ++t)
-        p->v += M[p->t][t]*2*n[t]/pow(n[p->t]+n[t], 2)*(grad[p->t] - grad[t]);
-      ekin += p->v.sq()/2.;
+        if(ngrad[t]>0) p->v += M[p->t][t]/n[p->t]*grad[t]/ngrad[t];
+        //p->v += M[p->t][t]*2*n[t]/(n[p->t]+n[t])
+        //        *(grad[p->t] - grad[t])/(ngrad[p->t]+ngrad[t]);
+      ekin += p->v.sq()/2;
     }
   }
 
@@ -142,7 +151,7 @@ public:
   {
     for(int i=0; i<L[0]; ++i)
       for(int j=0; j<L[1]; ++j)
-        boxes.push_back(vec {{i+.5, j+.5}});
+        boxes.push_back(vec {{i+.5f, j+.5f}});
   }
 
   void set_shift(const vec& s)
@@ -195,7 +204,7 @@ void parse_options(int ac, char **av)
     ("ntypes", opt::value<int>(&ntypes), "number of different types")
     ("nsteps", opt::value<int>(&nsteps), "total number of time steps")
     ("ninfo", opt::value<int>(&ninfo), "number of time steps between two analyses")
-    ("tau", opt::value<double>(&tau), "time step")
+    ("tau", opt::value<float>(&tau), "time step")
     ("M", opt::value<string>(&Mget), "interaction matrix");
 
   // command line options
@@ -246,11 +255,11 @@ void parse_options(int ac, char **av)
   // get number of particles array
   dens = get_ints_from_string(dget);
   if(dens.size()!=ntypes) throw inline_str("wrong number of densities");
-  ntot = accumulate(begin(L), end(L), 1., std::multiplies<double>())*
-         accumulate(begin(dens), end(dens), 0.);
+  ntot = accumulate(begin(L), end(L), 1, multiplies<int>())*
+         accumulate(begin(dens), end(dens), 0.f);
 
   // dirty conversion to interaction matrix...
-  auto values = get_doubles_from_string(Mget);
+  auto values = get_floats_from_string(Mget);
   // ... check
   if(values.size()!=ntypes*ntypes)
     throw inline_str("wrong number of elements in interaction matrix");
@@ -330,8 +339,8 @@ void simulate()
       for(int j=0; j<L[1]; ++j)
         for(int k=0; k<dens[t]; ++k)
           particles.push_back({
-            {{ random_real(double(i), double(i+1)),
-               random_real(double(j), double(j+1)) }},
+            {{ random_real(float(i), float(i+1)),
+               random_real(float(j), float(j+1)) }},
             {{0,0}},
             t});
 
@@ -344,7 +353,7 @@ void simulate()
   for(int t=0; t<=nsteps; ++t)
   {
     // the random shift
-    boxes.set_shift(random_vec(0, 1));
+    boxes.set_shift(vec {{ random_real(), random_real() }});
 
     // simulate particles
     for(auto& p : particles)
@@ -400,6 +409,8 @@ int main(int argc, char *argv[])
     if(verbose) cout << endl << "Initialization"
                      << endl << string(width, '=')
                      << endl;
+
+    init_random();
 
     // ========================================
     // Running

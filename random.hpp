@@ -1,38 +1,21 @@
 #ifndef RANDOM_HPP_
 #define RANDOM_HPP_
 
-#include "header.hpp"
-#include <algorithm>
-#include <random>
-
-using generator_t = std::mt19937;
-
+// self explanatory
+void init_random();
 // return random real, uniform distribution
-double random_real(double min, double max);
+float random_real();
+// return random real, normally distributed
+float random_normal();
 
-// return random vector, with uniform distribution
-vec random_vec(double min, double max);
-
-// return the generator
-generator_t& get_gen();
-
-// return random real, arbitrary distribution
-template<class T>
-double random_real(const T& dist)
+inline float random_real(float min, float max)
 {
-  return dist(get_gen());
+  return min+random_real()*(max-min);
 }
 
-// return random vector, with arbitrary distribution
-template<class T>
-vec random_vec(T&& dist)
+inline float random_normal(float mu, float sigma)
 {
-  vec v;
-  std::generate(std::begin(v),
-                std::end(v),
-                [&](){ return dist(get_gen()); }
-               );
-  return v;
+  return mu + sigma*random_normal();
 }
 
 #endif//RANDOM_HPP_

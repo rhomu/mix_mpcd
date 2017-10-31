@@ -7,6 +7,7 @@
 #include <array>
 #include <cmath>
 #include <algorithm>
+#include <numeric>
 #include <functional>
 #include <boost/program_options.hpp>
 
@@ -15,6 +16,6 @@
 // dimension
 constexpr int dim = 2;
 // standard vec
-using vec = vect<double, dim>;
+using vec = vect<float, dim>;
 
 #endif//HEADER_HPP_
