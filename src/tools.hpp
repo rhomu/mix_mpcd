@@ -52,7 +52,7 @@ inline std::vector<float> get_floats_from_string(std::string s)
   std::replace(begin(s), end(s), ']', ',');
   std::replace(begin(s), end(s), '[', ' ');
 
-  for(int p=0, q=0; p!=s.npos; p=q)
+  for(size_t p=0, q=0; p!=s.npos; p=q)
   {
     const auto ss = s.substr(p+(p!=0), (q=s.find(',', p+1))-p-(p!=0));
     if(not ss.empty()) values.push_back(atof(ss.c_str()));
@@ -68,7 +68,7 @@ inline std::vector<int> get_ints_from_string(std::string s)
   std::replace(begin(s), end(s), ']', ',');
   std::replace(begin(s), end(s), '[', ' ');
 
-  for(int p=0, q=0; p!=s.npos; p=q)
+  for(size_t p=0, q=0; p!=s.npos; p=q)
   {
     const auto ss = s.substr(p+(p!=0), (q=s.find(',', p+1))-p-(p!=0));
     if(not ss.empty()) values.push_back(atoi(ss.c_str()));
@@ -95,7 +95,7 @@ template<int D, typename U>
 inline vect<float, D> modu(const vect<float, D>& num, const U& div)
 {
   vect<float, D> ret;
-  for(int i; i<D; ++i) ret[i] = modu(num[i], div[i]);
+  for(int i=0; i<D; ++i) ret[i] = modu(num[i], div[i]);
   return ret;
 }
 

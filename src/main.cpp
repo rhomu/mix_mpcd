@@ -35,6 +35,9 @@ int width = 50;
 string directory;
 // external force
 vec f({ 0, 0 });
+// exchage probability and flag
+float p_exchange = 0;
+bool exchange = false;
 
 // =============================================================================
 // components
@@ -205,6 +208,7 @@ void parse_options(int ac, char **av)
     ("nsteps", opt::value<int>(&nsteps), "total number of time steps")
     ("ninfo", opt::value<int>(&ninfo), "number of time steps between two analyses")
     ("tau", opt::value<float>(&tau), "time step")
+    ("exchange", opt::value<float>(&p_exchange), "exchange probability")
     ("M", opt::value<string>(&Mget), "interaction matrix");
 
   // command line options
@@ -248,13 +252,16 @@ void parse_options(int ac, char **av)
   }
   else throw inline_str("please specify an input/output directory");
 
+  // do we exchange particles?
+  exchange = vm.count("exchange");
+
   // get system size
   L = get_ints_from_string(Lget);
   if(L.size()!=dim) throw inline_str("wrong format for system size");
 
   // get number of particles array
   dens = get_ints_from_string(dget);
-  if(dens.size()!=ntypes) throw inline_str("wrong number of densities");
+  if(dens.size()!=size_t(ntypes)) throw inline_str("wrong number of densities");
   ntot = accumulate(begin(L), end(L), 1, multiplies<int>())*
          accumulate(begin(dens), end(dens), 0.f);
 
@@ -293,7 +300,7 @@ void write_frame(int t,
   files[0].open(fname("density"), ios::out | ios::binary);
   files[1].open(fname("velocity"), ios::out | ios::binary);
   files[2].open(fname("energy"), ios::out | ios::binary);
-  for(int i=3; i<files.size(); ++i)
+  for(size_t i=3; i<files.size(); ++i)
     files[i].open(fname(inline_str("density.", i-3)), ios::out | ios::binary);
   for(auto& f : files) if(not f.good())
     throw inline_str("unable to open files for writing");

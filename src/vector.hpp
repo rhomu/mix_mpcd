@@ -83,7 +83,7 @@ public:
   // vector product
   T times(const vect& p) const
   {
-    T c;
+    T c = 0;
     for(int i=0; i<D; ++i)
       c += components[i]*p.components[i];
     return c;
