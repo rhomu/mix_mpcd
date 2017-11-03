@@ -15,12 +15,12 @@ void print_vm(const opt::variables_map& vm, unsigned padding)
   for (opt::variables_map::const_iterator it = vm.begin(); it != vm.end(); ++it)
   {
     std::cout << std::left << " " << std::setw(padding-39) << it->first;
-    if (((boost::any)it->second.value()).empty()) {
-      std::cout << "(empty)";
-    }
-    if (vm[it->first].defaulted() || it->second.defaulted()) {
-      std::cout << "(default)";
-    }
+    //if (((boost::any)it->second.value()).empty()) {
+    //  std::cout << "(empty)";
+    //}
+    //if (vm[it->first].defaulted() || it->second.defaulted()) {
+    //  std::cout << "(default)";
+    //}
     std::cout << " = " << std::right << std::setw(35);
 
     bool is_char;
@@ -48,6 +48,8 @@ void print_vm(const opt::variables_map& vm, unsigned padding)
       std::cout << vm[it->first].as<bool>() << std::endl;
     } else if (((boost::any)it->second.value()).type() == typeid(double)) {
       std::cout << vm[it->first].as<double>() << std::endl;
+    } else if (((boost::any)it->second.value()).type() == typeid(float)) {
+      std::cout << vm[it->first].as<float>() << std::endl;
     } else if (is_char) {
       std::cout << vm[it->first].as<const char *>() << std::endl;
     } else if (is_str) {
