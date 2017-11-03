@@ -178,7 +178,7 @@ float efix ( )
 //
 //  Purpose:
 //
-//    EFIX generates variates when rejection occurs in the exponential code. 
+//    EFIX generates variates when rejection occurs in the exponential code.
 //
 //  Discussion:
 //
@@ -213,10 +213,10 @@ float efix ( )
 //
 //    Output, float EFIX, an exponential variate.
 //
-{ 
+{
   float x;
 
-  for ( ; ; ) 
+  for ( ; ; )
   {
 //
 //  IZ = 0.
@@ -227,16 +227,16 @@ float efix ( )
     }
 
     x = jz * we[iz];
-    if ( fe[iz] + UNI * ( fe[iz-1] - fe[iz] ) < exp ( - x ) ) 
+    if ( fe[iz] + UNI * ( fe[iz-1] - fe[iz] ) < exp ( - x ) )
     {
       return x;
     }
-// 
+//
 //  Initiate, try to exit the loop.
 //
     jz = KISS;
     iz = ( jz & 255 );
-    if ( jz < ke[iz] ) 
+    if ( jz < ke[iz] )
     {
       return ( ( float ) ( jz * we[iz] ) );
     }
@@ -258,7 +258,7 @@ uint32_t kiss_seeded ( uint32_t &jcong, uint32_t &jsr, uint32_t &w, uint32_t &z 
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -277,7 +277,7 @@ uint32_t kiss_seeded ( uint32_t &jcong, uint32_t &jsr, uint32_t &w, uint32_t &z 
 //
 //  Parameters:
 //
-//    Input/output, uint32_t &JCONG, uint32_t &JSR, uint32_t &W, uint32_t &Z, 
+//    Input/output, uint32_t &JCONG, uint32_t &JSR, uint32_t &W, uint32_t &Z,
 //    the seeds, which are updated on each call.
 //
 //    Output, uint32_t KISS_SEEDED, the new value.
@@ -350,7 +350,7 @@ uint32_t mwc_seeded ( uint32_t &w, uint32_t &z )
 //
 //  Licensing:
 //
-//    This code is distributed under the GNU LGPL license. 
+//    This code is distributed under the GNU LGPL license.
 //
 //  Modified:
 //
@@ -369,7 +369,7 @@ uint32_t mwc_seeded ( uint32_t &w, uint32_t &z )
 //
 //  Parameters:
 //
-//    Input/output, uint32_t &W, uint32_t &Z, the seeds, which are updated 
+//    Input/output, uint32_t &W, uint32_t &Z, the seeds, which are updated
 //    on each call.
 //
 //    Output, uint32_t MWC_SEEDED, the new value.
@@ -438,7 +438,7 @@ float nfix ( )
 //****************************************************************************80
 //
 //  Purpose:
-// 
+//
 //    NFIX generates variates when rejection occurs in the normal code.
 //
 //  Discussion:
@@ -486,24 +486,24 @@ float nfix ( )
 //
     x = ( float ) ( hz * wn[iz] );
     if ( iz == 0 )
-    { 
+    {
       do
       {
-        x = - log ( UNI ) * 0.2904764; 
+        x = - log ( UNI ) * 0.2904764;
         y = - log ( UNI );
       }
       while ( y + y < x * x );
 
       return ( 0 < hz ) ? r + x : - r - x;
     }
-// 
+//
 //  0 < IZ, handle the wedges of other strips.
 //
-    if ( fn[iz] + UNI * ( fn[iz-1] - fn[iz] ) < exp ( - 0.5 * x * x ) ) 
+    if ( fn[iz] + UNI * ( fn[iz-1] - fn[iz] ) < exp ( - 0.5 * x * x ) )
     {
       return x;
     }
-// 
+//
 //  Initiate, try to exit the loop.
 //
     hz = SHR3;
@@ -596,7 +596,7 @@ float r4_exp_value ( )
 //
 //  Discussion:
 //
-//    The value returned is generated from a distribution on [0,+00) with density 
+//    The value returned is generated from a distribution on [0,+00) with density
 //    exp(-x).
 //
 //    The underlying algorithm is the ziggurat method.
@@ -720,7 +720,7 @@ float r4_nor_value ( )
 //
 //  Discussion:
 //
-//    The value returned is generated from a distribution with mean 0 and 
+//    The value returned is generated from a distribution with mean 0 and
 //    variance 1.
 //
 //    The underlying algorithm is the ziggurat method.
@@ -849,7 +849,7 @@ uint32_t shr3_seeded ( uint32_t &jsr )
 //
 //  Parameters:
 //
-//    Input/output, uint32_t &JSR, the seed, which is updated 
+//    Input/output, uint32_t &JSR, the seed, which is updated
 //    on each call.
 //
 //    Output, uint32_t SHR3_SEEDED, the value of the SHR3 generator.
@@ -1017,7 +1017,7 @@ void zigget ( uint32_t &jsr_value, uint32_t &jcong_value,
 }
 //****************************************************************************80
 
-void zigset ( uint32_t jsr_value, uint32_t jcong_value, uint32_t w_value, 
+void zigset ( uint32_t jsr_value, uint32_t jcong_value, uint32_t w_value,
   uint32_t z_value )
 
 //****************************************************************************80
