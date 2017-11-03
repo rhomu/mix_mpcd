@@ -30,8 +30,8 @@ static uint32_t z = 456789123;
 //
 # define znew ( z = 36969 * ( z & 65535 ) + ( z >> 16 ) )
 # define wnew ( w = 18000 * ( w & 65535 ) + ( w >> 16 ) )
-# define MWC ( ( znew << 16 ) + wnew )
-# define SHR3 ( jz = jsr, jsr ^= ( jsr << 13 ), jsr ^= ( jsr >> 17 ), jsr ^= ( jsr << 5 ), jz + jsr )
+# define MWC  ( ( znew << 16 ) + wnew )
+# define SHR3 SHR3_impl()
 # define CONG ( jcong = 69069 * jcong + 1234567 )
 # define KISS ( ( MWC ^ CONG ) + SHR3 )
 
@@ -39,6 +39,8 @@ static uint32_t z = 456789123;
 # define IUNI KISS
 # define RNOR ( hz = KISS, iz = hz & 127, ( fabs ( hz ) < kn[iz] ) ? hz * wn[iz] : nfix() )
 # define REXP ( jz = KISS, iz = jz & 255, (        jz   < ke[iz] ) ? jz * we[iz] : efix() )
+
+inline uint32_t SHR3_impl() { jz = jsr; jsr ^= ( jsr << 13 ); jsr ^= ( jsr >> 17 ); jsr ^= ( jsr << 5 ); return jz + jsr; }
 
 //****************************************************************************80
 
@@ -949,13 +951,13 @@ void timestamp ( )
 
   static char time_buffer[TIME_SIZE];
   const struct tm *tm;
-  size_t len;
+  //size_t len;
   time_t now;
 
   now = time ( NULL );
   tm = localtime ( &now );
 
-  len = strftime ( time_buffer, TIME_SIZE, "%d %B %Y %I:%M:%S %p", tm );
+  /*len =*/ strftime ( time_buffer, TIME_SIZE, "%d %B %Y %I:%M:%S %p", tm );
 
   cout << time_buffer << "\n";
 
