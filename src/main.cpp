@@ -15,8 +15,12 @@ namespace opt = boost::program_options;
 float tau = 2e-2;
 // number of boxes in each dimension
 vector<int> L;
+// total number of boxes
+int nboxes;
 // number of particles
 vector<int> dens = {10};
+// number of particles of each type
+vector<int> npart;
 // total number of particles
 int ntot;
 // number of types
@@ -35,9 +39,8 @@ int width = 50;
 string directory;
 // external force
 vec f({ 0, 0 });
-// exchage probability and flag
-float p_exchange = 0;
-bool exchange = false;
+// surface tensions
+vector<float> st = {0};
 
 // =============================================================================
 // components
@@ -65,12 +68,10 @@ struct box
   const vec x;
   // number of particles of each type
   vector<int> n;
-  // total number of particles
-  int ntot = 0;
   // ptrs to particles
   vector<particle*> particles;
-  // mean velocity
-  vec vcm;
+  // mean velocity and noise
+  vec vcm, ncm;
   // total ekin
   float ekin;
 
@@ -83,45 +84,74 @@ struct box
   // the collision operator
   void collision(const vec& shift)
   {
-    // total number of particles
-    if(ntot==0) return;
+    // total number of particles > 0
+    if(particles.empty()) return;
 
     // compute box properties
-    vector<vec> ncm(ntypes, {{0,0}}),
-                tcm(ntypes, {{0,0}}),
-                grad {{0,0}};
+    vector<vec> grad (ntypes, {{0,0}});
+    vector<vec> grad2(ntypes, {{0,0}});
     vector<int> ngrad(ntypes, 0);
-    vcm = {{ 0, 0 }};
-    for(auto& p : particles)
+    vector<vec> tcm(ntypes, {{0,0}}),
+                acm(ntypes, {{0,0}});
+    vcm = ncm = {{ 0, 0 }};
+    for(const auto& p : particles)
     {
       // gradient
       const vec d = modu(p->x + shift, L) - x;
-      if(d.sq()<1)
+      if(d.sq()<.25f)
       {
         grad[p->t] += 12.f*d;
+        grad2[p->t] += 480.f*d*(26.f*d*d + 6.f - 35.f*d.times(d));
         ++ngrad[p->t];
       }
 
       // noise
-      tcm[p->t]  += p->v;
-      vcm        += p->v;
-      p->v        = {{ random_normal(), random_normal() }};
-      ncm[p->t]  += p->v;
+      vcm  += p->v;
+      tcm[p->t] += p->v;
+      p->v  = {{ random_normal(), random_normal() }};
+      ncm  += p->v;
+      acm[p->t] += p->v;
     }
 
-    vcm /= ntot;
+    const auto phi = float(n[0]-n[1])/(n[0]+n[1]);
+    const auto bla = (grad[0]-grad[1]-0*7e-3f*(grad2[0]-grad2[2]))/(ngrad[0]+ngrad[1]);
+
+    if(ngrad[0] + ngrad[1]>0)
+      vcm += 2*st[0]*(1-phi*phi)*bla;
+
+    vcm /= particles.size();
+    ncm /= particles.size();
 
     // perform collision
     ekin = 0;
-    for(auto& p : particles)
+    vec vcm2 = {{0,0}};
+    for(const auto& p : particles)
     {
-      p->v += (tcm[p->t] - ncm[p->t])/n[p->t];
-      for(int t=0; t<ntypes; ++t)
-        if(ngrad[t]>0) p->v += M[p->t][t]/n[p->t]*grad[t]/ngrad[t];
+      p->v += vcm - acm[p->t]/n[p->t];
+      //p->v += (tcm[p->t] - acm[p->t])/n[p->t];
+      //p->v += vcm - ncm;
+      if(ngrad[0] + ngrad[1]>0)
+      {
+        if(p->t==0) p->v +=  .3f*n[1]/particles.size()*bla;
+        if(p->t==1) p->v += -.3f*n[0]/particles.size()*bla;
+      }
+      //p->v += vcm - ncm;
+      //for(int t=0; t<ntypes; ++t)
+        //p->v += M[p->t][t]*4*(particles.size()-n[p->t])/particles.size()*(grad[t] + (p->t==0 ? 0.0f : 0.01f )*grad2[t])/ngrad[t];
+        //p->v += M[p->t][t]/n[p->t]*(grad[t] + (p->t==0 ? 0.0f : 0.01f )*grad2[t])/ngrad[t];
         //p->v += M[p->t][t]*2*n[t]/(n[p->t]+n[t])
-        //        *(grad[p->t] - grad[t])/(ngrad[p->t]+ngrad[t]);
+          //      *(grad[p->t] - grad[t])/(ngrad[p->t]+ngrad[t]);
+      vcm2 += p->v;
       ekin += p->v.sq()/2;
     }
+
+    //vcm2 /= particles.size();
+    //if(abs(vcm[0]-vcm2[0])>1e-3)
+    //  cout << vcm << ' ' << vcm2 << ' ' << n[0] << ' ' << n[1] << endl;
+
+    //for(const auto& p: particles)
+    //  p->v -= vcm;
+
   }
 
   // add particles
@@ -129,14 +159,12 @@ struct box
   {
     particles.push_back(p);
     ++n[p->t];
-    ++ntot;
   }
 
   // empty particle list
   void clear()
   {
     particles.clear();
-    ntot = 0;
     fill(begin(n), end(n), 0);
   }
 };
@@ -190,7 +218,7 @@ public:
 void parse_options(int ac, char **av)
 {
   // we use strings to retreive the arrays
-  string Mget, dget, Lget;
+  string Mget, dget, Lget, gget;
 
   // options allowed only in the command line
   opt::options_description generic("Generic options");
@@ -208,7 +236,7 @@ void parse_options(int ac, char **av)
     ("nsteps", opt::value<int>(&nsteps), "total number of time steps")
     ("ninfo", opt::value<int>(&ninfo), "number of time steps between two analyses")
     ("tau", opt::value<float>(&tau), "time step")
-    ("exchange", opt::value<float>(&p_exchange), "exchange probability")
+    ("gamma", opt::value<string>(&gget), "surface tension parameters")
     ("M", opt::value<string>(&Mget), "interaction matrix");
 
   // command line options
@@ -252,18 +280,27 @@ void parse_options(int ac, char **av)
   }
   else throw inline_str("please specify an input/output directory");
 
-  // do we exchange particles?
-  exchange = vm.count("exchange");
-
   // get system size
   L = get_ints_from_string(Lget);
   if(L.size()!=dim) throw inline_str("wrong format for system size");
 
+  // total number of boxes
+  nboxes = accumulate(begin(L), end(L), 1, multiplies<int>());
+
   // get number of particles array
   dens = get_ints_from_string(dget);
   if(dens.size()!=size_t(ntypes)) throw inline_str("wrong number of densities");
-  ntot = accumulate(begin(L), end(L), 1, multiplies<int>())*
-         accumulate(begin(dens), end(dens), 0.f);
+
+  // get surface tensions
+  st = get_floats_from_string(gget);
+  if(st.size()!=size_t(ntypes)) throw inline_str("wrong number of surface tensions");
+
+  // total number of particles of each specie
+  npart.reserve(ntypes);
+  for(int t=0; t<ntypes; ++t)
+    npart.push_back(nboxes*dens[t]);
+  // total number of particles
+  ntot = accumulate(begin(npart), end(npart), 0.f);
 
   // dirty conversion to interaction matrix...
   auto values = get_floats_from_string(Mget);
@@ -308,18 +345,17 @@ void write_frame(int t,
   // write data
   for(auto& b : boxes)
   {
-    write_binary(files[0], &b.ntot);
-    write_binary(files[1], &b.vcm);
-    write_binary(files[2], &b.ekin);
-    for(int i=0; i<ntypes; ++i) write_binary(files[3+i], &b.n[i]);
+    write_binary(files[0], b.particles.size());
+    write_binary(files[1], b.vcm);
+    write_binary(files[2], b.ekin);
+    for(int i=0; i<ntypes; ++i) write_binary(files[3+i], b.n[i]);
   }
 
   // close all files
   for(auto& f : files) f.close();
 
-  return;
-
   // write particles
+  /*
   {
     ofstream file(fname("particles"), ios::out | ios::binary);
 
@@ -328,6 +364,7 @@ void write_frame(int t,
 
     file.close();
   }
+  */
 }
 
 // =============================================================================
@@ -357,7 +394,7 @@ void simulate()
   // ---------------------------------------------------------------------------
   // the algo
 
-  for(int t=0; t<=nsteps; ++t)
+  for(int time=0; time<=nsteps; ++time)
   {
     // the random shift
     boxes.set_shift(vec {{ random_real(), random_real() }});
@@ -367,15 +404,15 @@ void simulate()
     {
       // stream
       p.stream();
-      // bucket particles
+      // bucket
       boxes.bucket(&p);
     }
 
     // store step
-    if(t%ninfo == 0)
+    if(time%ninfo == 0)
     {
       // print status
-      cout << "t = " << t <<  " / " << nsteps << endl;
+      cout << "t = " << time <<  " / " << nsteps << endl;
 
       // collision
       boxes.collision();
@@ -385,7 +422,7 @@ void simulate()
       for(auto& p : particles)
         boxes.bucket(&p);
       // store and clear
-      write_frame(t, boxes, particles);
+      write_frame(time, boxes, particles);
       boxes.clear();
     }
     // normal step

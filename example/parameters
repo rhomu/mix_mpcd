@@ -6,13 +6,16 @@
 L = [50, 50]
 
 # number of steps
-nsteps = 5000
+nsteps = 50000
 
 # info steps
 ninfo = 100
 
 # time step
 tau = 5e-2
+
+# surface tensions
+gamma = [ 0.2, 0.2 ]
 
 # number of particle types
 #ntypes = 3
@@ -24,4 +27,4 @@ dens = [10, 10]
 
 # interaction matrix
 #M = [[ .4, -.2, -.1 ], [ -.4, .2, -.1], [-.2, -.2, -.1]]
-M = [[ .2, -.2],[-.2, .2]]
+M = [[ .3, -.3],[ -.3, .3]]

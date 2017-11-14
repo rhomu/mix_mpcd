@@ -79,9 +79,9 @@ inline std::vector<int> get_ints_from_string(std::string s)
 
 // write single value to binary stream
 template<class T>
-inline std::ostream& write_binary(std::ostream& stream, T* value)
+inline std::ostream& write_binary(std::ostream& stream, const T& value)
 {
-  return stream.write((char*)value, sizeof(T));
+  return stream.write((char*)&value, sizeof(T));
 }
 
 // modulo with correct handling of negative values

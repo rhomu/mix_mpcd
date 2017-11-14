@@ -39,9 +39,14 @@ void init_random()
   zigset(rd(), rd(), rd(), rd());
 
   // populate tables
-  for(long int i=0; i<table_size; ++i)
+  for(size_t i=0; i<table_size; ++i)
   {
     normal_values[i] = r4_nor_value();
     unifor_values[i] = r4_uni_value();
   }
+}
+
+uint32_t random_uint32()
+{
+  return kiss_value();
 }

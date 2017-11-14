@@ -53,7 +53,7 @@ def plot_frame(frame):
         h += dens.astype(float)*(i+.5)/ntypes
 
     plt.subplot(1, 2, 1)
-    cax = plt.imshow(h/d, origin='lower')
+    cax = plt.imshow(h/d, origin='lower')#, cmap='gnuplot2')
     cbar = fig.colorbar(cax, fraction=0.046, pad=0.04)
 
     plt.subplot(1, 2, 2)
