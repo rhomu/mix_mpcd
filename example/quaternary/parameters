@@ -1,0 +1,24 @@
+#
+# this is an example runcard
+#
+
+# system size
+L = [50, 50]
+
+# number of steps
+nsteps = 50000
+
+# info steps
+ninfo = 100
+
+# time step
+tau = 5e-2
+
+# number of particle types
+ntypes = 4
+
+# interaction parameters
+kappa = [1.8, 1.6, 1.8, 1.4]
+
+# number of particles
+dens = [10, 10, 10, 10]
