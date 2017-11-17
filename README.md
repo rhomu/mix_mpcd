@@ -31,8 +31,5 @@ python2 plot.py ../examples/binary/
 ```
 
 ## Samples
-![binary](exmaples/binary.png)
----
+![binary](examples/binary.png)
 ![ternary](examples/ternary.png)
----
-!
