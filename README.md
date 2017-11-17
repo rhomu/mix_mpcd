@@ -17,9 +17,9 @@ require a modern compiler (tested with g++-4.9).
 
 ## Running
 
-Run example: in `build` directory type
+Run examples: in `build` directory type
 ```
-./mpcd ../example
+./mpcd ../examples/binary/
 ```
 
 Program interaction is fairly limited but you can change the simulation
@@ -27,5 +27,5 @@ parameters in `example/parameters`.
 
 Plot: in plot directory type
 ```
-python2 plot.py ../example
+python2 plot.py ../examples/binary/
 ```
