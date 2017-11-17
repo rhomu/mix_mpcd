@@ -33,6 +33,8 @@ ninfo  = int(load('ninfo', dat))
 cmap = 'viridis'
 if ntypes==3:
     cmap = 'jet'
+if ntypes>3:
+    cmap = 'rainbow'
 
 # ------------------------------------------------------------------------------
 # plot
@@ -62,6 +64,7 @@ def plot_frame(frame):
     #cbar = fig.colorbar(cax, fraction=0.046, pad=0.04)
 
     plt.subplot(1, 2, 2)
+    plt.title('total density')
     cax = plt.imshow(d, origin='lower')
     cbar = fig.colorbar(cax, fraction=0.046, pad=0.04)
 
