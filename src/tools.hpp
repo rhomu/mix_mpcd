@@ -99,4 +99,20 @@ inline vect<float, D> modu(const vect<float, D>& num, const U& div)
   return ret;
 }
 
+/* Branchless division accounting for zero
+ *
+ * This function is the branchless version of
+ *
+ *    if(norm==0) value /= 1;
+ *    else value /= norm;
+ *
+ * and is useful when norm==0 implies value==0 (think about normalizing the
+ * average of an empty array by the number of its elements).
+ * */
+template<typename T, typename U>
+inline void normalize(T& value, U norm)
+{
+  value /= norm += norm == 0;
+}
+
 #endif//TOOLS_HPP_

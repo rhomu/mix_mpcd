@@ -25,8 +25,8 @@ vector<int> npart;
 int ntot;
 // number of types
 int ntypes = 1;
-// interaction matrix
-vector<vector<float>> M;
+// interaction parameters
+vector<float> kappa;
 // total number of time steps
 int nsteps = 100000;
 // number of steps between analyses
@@ -37,10 +37,6 @@ int verbose = 1;
 int width = 50;
 // intput/output directory
 string directory;
-// external force
-vec f({ 0, 0 });
-// surface tensions
-vector<float> st = {0};
 
 // =============================================================================
 // components
@@ -84,15 +80,11 @@ struct box
   // the collision operator
   void collision(const vec& shift)
   {
-    // total number of particles > 0
-    if(particles.empty()) return;
-
     // compute box properties
-    vector<vec> grad (ntypes, {{0,0}});
-    vector<vec> grad2(ntypes, {{0,0}});
+    vector<vec> grad (ntypes+1, {{0,0}});
+    //vector<vec> grad2(ntypes, {{0,0}});
     vector<int> ngrad(ntypes, 0);
-    vector<vec> tcm(ntypes, {{0,0}}),
-                acm(ntypes, {{0,0}});
+    //int ngrad = 0;
     vcm = ncm = {{ 0, 0 }};
     for(const auto& p : particles)
     {
@@ -101,57 +93,44 @@ struct box
       if(d.sq()<.25f)
       {
         grad[p->t] += 12.f*d;
-        grad2[p->t] += 480.f*d*(26.f*d*d + 6.f - 35.f*d.times(d));
+        //grad2[p->t] += 480.f*d*(26.f*d*d + 6.f - 35.f*d.times(d));
         ++ngrad[p->t];
       }
 
       // noise
       vcm  += p->v;
-      tcm[p->t] += p->v;
       p->v  = {{ random_normal(), random_normal() }};
       ncm  += p->v;
-      acm[p->t] += p->v;
     }
 
-    const auto phi = float(n[0]-n[1])/(n[0]+n[1]);
-    const auto bla = (grad[0]-grad[1]-0*7e-3f*(grad2[0]-grad2[2]))/(ngrad[0]+ngrad[1]);
-
-    if(ngrad[0] + ngrad[1]>0)
-      vcm += 2*st[0]*(1-phi*phi)*bla;
-
-    vcm /= particles.size();
-    ncm /= particles.size();
+    normalize(vcm, particles.size());
+    normalize(ncm, particles.size());
+    for(int t=0; t<ntypes; ++t)
+    {
+      normalize(grad[t], ngrad[t]);
+      grad[ntypes] += grad[t]; // total grad
+    }
 
     // perform collision
     ekin = 0;
-    vec vcm2 = {{0,0}};
+    vec vcm_corr = {{0,0}};
     for(const auto& p : particles)
     {
-      p->v += vcm - acm[p->t]/n[p->t];
-      //p->v += (tcm[p->t] - acm[p->t])/n[p->t];
-      //p->v += vcm - ncm;
-      if(ngrad[0] + ngrad[1]>0)
-      {
-        if(p->t==0) p->v +=  .3f*n[1]/particles.size()*bla;
-        if(p->t==1) p->v += -.3f*n[0]/particles.size()*bla;
-      }
-      //p->v += vcm - ncm;
-      //for(int t=0; t<ntypes; ++t)
-        //p->v += M[p->t][t]*4*(particles.size()-n[p->t])/particles.size()*(grad[t] + (p->t==0 ? 0.0f : 0.01f )*grad2[t])/ngrad[t];
-        //p->v += M[p->t][t]/n[p->t]*(grad[t] + (p->t==0 ? 0.0f : 0.01f )*grad2[t])/ngrad[t];
-        //p->v += M[p->t][t]*2*n[t]/(n[p->t]+n[t])
-          //      *(grad[p->t] - grad[t])/(ngrad[p->t]+ngrad[t]);
-      vcm2 += p->v;
+      p->v += vcm - ncm;
+
+      for(int t=0; t<ntypes; ++t)
+        p->v += kappa[p->t]*kappa[t]/n[p->t]/particles.size()
+                //*(grad[p->t]-grad[t]-grad[ntypes]*(n[p->t]-n[t])/particles.size());
+                *grad[p->t];
+
+      vcm_corr += p->v;
       ekin += p->v.sq()/2;
     }
 
-    //vcm2 /= particles.size();
-    //if(abs(vcm[0]-vcm2[0])>1e-3)
-    //  cout << vcm << ' ' << vcm2 << ' ' << n[0] << ' ' << n[1] << endl;
-
-    //for(const auto& p: particles)
-    //  p->v -= vcm;
-
+    // correct for momentum conservation
+    normalize(vcm_corr, particles.size());
+    for(const auto& p: particles)
+      p->v -= vcm_corr - vcm;
   }
 
   // add particles
@@ -218,7 +197,7 @@ public:
 void parse_options(int ac, char **av)
 {
   // we use strings to retreive the arrays
-  string Mget, dget, Lget, gget;
+  string kget, dget, Lget, gget;
 
   // options allowed only in the command line
   opt::options_description generic("Generic options");
@@ -236,8 +215,7 @@ void parse_options(int ac, char **av)
     ("nsteps", opt::value<int>(&nsteps), "total number of time steps")
     ("ninfo", opt::value<int>(&ninfo), "number of time steps between two analyses")
     ("tau", opt::value<float>(&tau), "time step")
-    ("gamma", opt::value<string>(&gget), "surface tension parameters")
-    ("M", opt::value<string>(&Mget), "interaction matrix");
+    ("kappa", opt::value<string>(&kget), "interaction parameters");
 
   // command line options
   opt::options_description cmdline_options;
@@ -291,9 +269,9 @@ void parse_options(int ac, char **av)
   dens = get_ints_from_string(dget);
   if(dens.size()!=size_t(ntypes)) throw inline_str("wrong number of densities");
 
-  // get surface tensions
-  st = get_floats_from_string(gget);
-  if(st.size()!=size_t(ntypes)) throw inline_str("wrong number of surface tensions");
+  // get interaction params
+  kappa = get_floats_from_string(kget);
+  if(kappa.size()!=size_t(ntypes)) throw inline_str("wrong number of interaction parameters");
 
   // total number of particles of each specie
   npart.reserve(ntypes);
@@ -302,6 +280,7 @@ void parse_options(int ac, char **av)
   // total number of particles
   ntot = accumulate(begin(npart), end(npart), 0.f);
 
+  /*
   // dirty conversion to interaction matrix...
   auto values = get_floats_from_string(Mget);
   // ... check
@@ -312,6 +291,7 @@ void parse_options(int ac, char **av)
   for(int i=0; i<ntypes; ++i)
     for(int j=0; j<ntypes; ++j)
       M[i].push_back(values[ntypes*i + j]);
+  */
 
   // print the simulation parameters
   if(verbose)

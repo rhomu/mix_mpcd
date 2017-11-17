@@ -30,6 +30,10 @@ ntypes = int(load('ntypes', dat))
 nsteps = int(load('nsteps', dat))
 ninfo  = int(load('ninfo', dat))
 
+cmap = 'viridis'
+if ntypes==3:
+    cmap = 'jet'
+
 # ------------------------------------------------------------------------------
 # plot
 
@@ -40,7 +44,6 @@ def get_density(frame, t = -1):
     arr = np.array(struct.unpack('i'*(len(dat)//4), dat))
     return arr.reshape((L[0], L[1]))
 
-
 def plot_frame(frame):
     fig.clf()
     plt.subplots_adjust(wspace=.5)
@@ -50,11 +53,13 @@ def plot_frame(frame):
     for i in range(ntypes):
         dens = get_density(frame, t=i)
         d += dens
-        h += dens.astype(float)*(i+.5)/ntypes
+        h += dens.astype(float)*(i+.5)
+
+    h = (h - .5)/(ntypes - .5)
 
     plt.subplot(1, 2, 1)
-    cax = plt.imshow(h/d, origin='lower')#, cmap='gnuplot2')
-    cbar = fig.colorbar(cax, fraction=0.046, pad=0.04)
+    cax = plt.imshow(h/d, origin='lower', cmap=cmap, vmin=0, vmax=1)
+    #cbar = fig.colorbar(cax, fraction=0.046, pad=0.04)
 
     plt.subplot(1, 2, 2)
     cax = plt.imshow(d, origin='lower')
