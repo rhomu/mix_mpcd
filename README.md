@@ -29,3 +29,10 @@ Plot: in plot directory type
 ```
 python2 plot.py ../examples/binary/
 ```
+
+## Samples
+![binary](exmaples/binary.png)
+---
+![ternary](examples/ternary.png)
+---
+!
